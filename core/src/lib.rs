@@ -689,9 +689,10 @@ pub async fn run(
                     .merge(get_global_settings_routes(shared_state.clone()))
                     .merge(get_gateway_routes(shared_state.clone()))
                     .merge(get_extension_routes(shared_state.clone()))
-                    .merge(get_playitgg_routes(shared_state.clone()))
-                    .layer(cors)
-                    .layer(trace);
+        .merge(get_playitgg_routes(shared_state.clone()))
+        .merge(handlers::mods::get_mods_routes(shared_state.clone()))
+        .layer(cors)
+        .layer(trace);
                 let app = Router::new().nest("/api/v1", api_routes);
                 #[allow(unused_variables, unused_mut)]
                 let mut port = 16_662_u16;
