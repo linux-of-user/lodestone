@@ -56,17 +56,22 @@ impl PortManager {
             if let Ok(local_ip) = local_ip_address::local_ip() {
                 // convert local_ip to a SocketAddrV4
                 let local_ip = if let std::net::IpAddr::V4(ipv4) = local_ip {
-                    SocketAddrV4::new(ipv4, port)
+                    std::net::SocketAddrV4::new(ipv4, port)
                 } else {
                     panic!();
                 };
 
-                igd::search_gateway(Default::default())
-                    .context("Could not find gateway")?
+                let gateway = igd::aio::search_gateway(Default::default());
+                // igd 0.14 switched add_port signature and is now async via aio
+                // We'll use a synchronous version for now for compatibility
+                let gateway = igd::search_gateway(Default::default())
+                    .context("Could not find gateway")?;
+                gateway
                     .add_port(
                         igd::PortMappingProtocol::TCP,
                         port,
-                        local_ip,
+                        local_ip.ip().clone(),
+                        port,
                         0,
                         "Port opened by Lodestone",
                     )

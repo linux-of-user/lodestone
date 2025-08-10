@@ -12,24 +12,25 @@ pub async fn open_port(
     axum::extract::State(state): axum::extract::State<AppState>,
     AuthBearer(token): AuthBearer,
     Path(port): Path<u16>,
-) -> Result<Json<()>, Error> {
+) -> Result<Json<()>, crate::error::Error> {
     let requester = state
         .users_manager
         .read()
         .await
         .try_auth(&token)
-        .ok_or_else(|| Error {
+        .ok_or_else(|| crate::error::Error {
             kind: ErrorKind::Unauthorized,
             source: eyre!("Token error"),
         })?;
     if !requester.is_owner {
-        return Err(Error {
+        return Err(crate::error::Error {
             kind: ErrorKind::Unauthorized,
             source: eyre!("Only owners can open ports"),
         });
     }
 
-    Ok(Json(state.port_manager.lock().await.open_port(port).await?))
+    state.port_manager.lock().await.open_port(port).await?;
+    Ok(Json(()))
 }
 
 pub fn get_gateway_routes(state: AppState) -> Router {

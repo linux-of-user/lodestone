@@ -64,10 +64,8 @@ use tokio::{
     select,
     sync::{broadcast::error::RecvError, Mutex, RwLock},
 };
-use tower_http::{
-    cors::{Any, CorsLayer},
-    trace::TraceLayer,
-};
+use tower_http::cors::{Any, CorsLayer};
+use tower_http::trace::TraceLayer;
 use tracing::{debug, error, info, warn};
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::{prelude::__tracing_subscriber_SubscriberExt, EnvFilter};
@@ -667,7 +665,7 @@ pub async fn run(
                         Method::DELETE,
                         Method::OPTIONS,
                     ])
-                    .allow_headers([header::ORIGIN, header::CONTENT_TYPE, header::AUTHORIZATION]) // Note I can't find X-Auth-Token but it was in the original rocket version, hope it's fine
+                    .allow_headers([header::ORIGIN, header::CONTENT_TYPE, header::AUTHORIZATION])
                     .allow_origin(Any);
 
                 let trace = TraceLayer::new_for_http();
