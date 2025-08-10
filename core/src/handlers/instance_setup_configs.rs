@@ -45,19 +45,14 @@ impl TryFrom<HandlerGameType> for FlavourKind {
     type Error = Error;
     fn try_from(value: HandlerGameType) -> Result<Self, Self::Error> {
         match value {
-            HandlerGameType::MinecraftVanilla => Ok(FlavourKind::Vanilla),
+            HandlerGameType::MinecraftJavaVanilla => Ok(FlavourKind::Vanilla),
             HandlerGameType::MinecraftFabric => Ok(FlavourKind::Fabric),
             HandlerGameType::MinecraftForge => Ok(FlavourKind::Forge),
             HandlerGameType::MinecraftPaper => Ok(FlavourKind::Paper),
             HandlerGameType::MinecraftPurpur => Ok(FlavourKind::Purpur),
             HandlerGameType::MinecraftSpigot => Ok(FlavourKind::Spigot),
-            HandlerGameType::MinecraftQuilt => Ok(FlavourKind::Quilt),
-            HandlerGameType::Generic => Err(Error::msg("No FlavourKind for Generic")),
+            HandlerGameType::MinecraftBedrock => Err(Error::msg("Bedrock not supported here")),
         }
-    }
-})
-            }
-        })
     }
 }
 

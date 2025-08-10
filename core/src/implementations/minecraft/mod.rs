@@ -4,6 +4,7 @@ mod forge;
 mod line_parser;
 pub mod r#macro;
 mod paper;
+pub mod purpur;
 pub mod player;
 mod players_manager;
 pub mod server;
@@ -95,10 +96,6 @@ pub enum Flavour {
     Purpur {
         build_version: Option<PurpurBuildVersion>,
     },
-    Quilt {
-        loader_version: Option<FabricLoaderVersion>,
-        installer_version: Option<FabricInstallerVersion>,
-    },
     Spigot,
     Forge {
         build_version: Option<ForgeBuildVersion>,
@@ -109,10 +106,6 @@ pub enum Flavour {
             },
             FlavourKind::Purpur => Flavour::Purpur {
                 build_version: None,
-            },
-            FlavourKind::Quilt => Flavour::Quilt {
-                loader_version: None,
-                installer_version: None,
             },
             FlavourKind::Spigot => Flavour::Spigot,
             FlavourKind::Forge => Flavour::Forge {
@@ -129,7 +122,6 @@ impl ToString for Flavour {
             Flavour::Fabric { .. } => "fabric".to_string(),
             Flavour::Paper { .. } => "paper".to_string(),
             Flavour::Purpur { .. } => "purpur".to_string(),
-            Flavour::Quilt { .. } => "quilt".to_string(),
             Flavour::Spigot => "spigot".to_string(),
             Flavour::Forge { .. } => "forge".to_string(),
         }
@@ -143,7 +135,6 @@ impl ToString for FlavourKind {
             FlavourKind::Fabric => "fabric".to_string(),
             FlavourKind::Paper => "paper".to_string(),
             FlavourKind::Purpur => "purpur".to_string(),
-            FlavourKind::Quilt => "quilt".to_string(),
             FlavourKind::Spigot => "spigot".to_string(),
             FlavourKind::Forge => "forge".to_string(),
         }
@@ -229,9 +220,8 @@ impl MinecraftInstance {
             FlavourKind::Fabric => get_fabric_minecraft_versions().await,
             FlavourKind::Paper => get_paper_minecraft_versions().await,
             FlavourKind::Purpur => crate::implementations::minecraft::purpur::get_purpur_minecraft_versions().await,
-            FlavourKind::Quilt => crate::implementations::minecraft::quilt::get_quilt_minecraft_versions().await,
-            FlavourKind::Spigot => get_vanilla_minecraft_versions().await, // Use vanilla versions for Spigot
-            FlavourKind::Forge => get_forge_minecraft_versions().await,
+            FlavourKind::Spigot => todo!(),
+            FlavourKind::Forge => get_forge_minecraft_minecraft_versions().await,
         }
         .context("Failed to get minecraft versions")?;
 
@@ -547,7 +537,7 @@ impl MinecraftInstance {
             ));
         }
 
-        // Step 3: Download server.jar
+        // Step 3: Download server.jar or run BuildTools for Spigot
         let flavour_name = config.flavour.to_string();
         let (jar_url, flavour) = get_server_jar_url(config.version.as_str(), &config.flavour)
             .await
@@ -562,44 +552,123 @@ impl MinecraftInstance {
             })?;
         let jar_name = match flavour {
             Flavour::Forge { .. } => "forge-installer.jar",
+            Flavour::Spigot => "buildtools://spigot",
             _ => "server.jar",
         };
 
-        download_file(
-            jar_url.as_str(),
-            &path_to_instance,
-            Some(jar_name),
-            {
-                let event_broadcaster = event_broadcaster.clone();
-                &move |dl| {
-                    if let Some(total) = dl.total {
-                        event_broadcaster.send(Event::new_progression_event_update(
-                            progression_event_id,
-                            format!(
-                                "3/4: Downloading {} {} {}",
-                                flavour_name,
-                                jar_name,
-                                format_byte_download(dl.downloaded, total),
-                            ),
-                            (dl.step as f64 / total as f64) * 3.0,
-                        ));
-                    } else {
-                        event_broadcaster.send(Event::new_progression_event_update(
-                            progression_event_id,
-                            format!(
-                                "3/4: Downloading {} {} {}",
-                                flavour_name,
-                                jar_name,
-                                format_byte(dl.downloaded),
-                            ),
-                            0.0,
-                        ));
+        if let Flavour::Spigot = flavour {
+            // Download BuildTools.jar
+            let buildtools_url = "https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar";
+            let buildtools_path = path_to_instance.join("BuildTools.jar");
+            let _ = download_file(
+                buildtools_url,
+                &path_to_instance,
+                Some("BuildTools.jar"),
+                {
+                    let event_broadcaster = event_broadcaster.clone();
+                    &move |dl| {
+                        if let Some(total) = dl.total {
+                            event_broadcaster.send(Event::new_progression_event_update(
+                                progression_event_id,
+                                format!(
+                                    "3/4: Downloading BuildTools.jar {}",
+                                    format_byte_download(dl.downloaded, total)
+                                ),
+                                (dl.step as f64 / total as f64) * 3.0,
+                            ));
+                        }
                     }
+                },
+                true,
+            ).await;
+            // Run BuildTools
+            let jre = path_to_runtimes
+                .join("java")
+                .join(format!("jre{}", jre_major_version))
+                .join(if std::env::consts::OS == "macos" {
+                    "Contents/Home/bin"
+                } else {
+                    "bin"
+                })
+                .join("java");
+            let status = dont_spawn_terminal(
+                Command::new(&jre)
+                    .arg("-jar")
+                    .arg(&buildtools_path)
+                    .arg("--rev")
+                    .arg(&config.version)
+                    .current_dir(&path_to_instance),
+            )
+            .stderr(Stdio::null())
+            .stdout(Stdio::null())
+            .stdin(Stdio::null())
+            .spawn()
+            .context("Failed to start BuildTools.jar")?
+            .wait()
+            .await
+            .context("BuildTools.jar failed")?
+            .success();
+            if !status {
+                return Err(eyre!("Failed to build Spigot server with BuildTools").into());
+            }
+            // Find spigot-*.jar and move to server.jar
+            let files = tokio::fs::read_dir(&path_to_instance).await.context("Failed to read spigot build dir")?;
+            let mut found_spigot = false;
+            let mut dir_entries = files;
+            while let Some(entry) = dir_entries.next_entry().await.transpose()? {
+                let fname = entry.file_name();
+                let fname_str = fname.to_string_lossy();
+                if fname_str.starts_with("spigot-") && fname_str.ends_with(".jar") {
+                    let src = path_to_instance.join(&fname);
+                    let dst = path_to_instance.join("server.jar");
+                    tokio::fs::rename(src, dst).await.context("Failed to move spigot jar")?;
+                    found_spigot = true;
+                    break;
                 }
-            },
-            true,
-        )
-        .await?;
+            }
+            if !found_spigot {
+                return Err(eyre!("Failed to find built spigot-*.jar after running BuildTools").into());
+            }
+            // Optionally remove BuildTools.jar
+            let _ = tokio::fs::remove_file(&buildtools_path).await;
+        } else {
+            // Download as normal
+            download_file(
+                jar_url.as_str(),
+                &path_to_instance,
+                Some(jar_name),
+                {
+                    let event_broadcaster = event_broadcaster.clone();
+                    &move |dl| {
+                        if let Some(total) = dl.total {
+                            event_broadcaster.send(Event::new_progression_event_update(
+                                progression_event_id,
+                                format!(
+                                    "3/4: Downloading {} {} {}",
+                                    flavour_name,
+                                    jar_name,
+                                    format_byte_download(dl.downloaded, total),
+                                ),
+                                (dl.step as f64 / total as f64) * 3.0,
+                            ));
+                        } else {
+                            event_broadcaster.send(Event::new_progression_event_update(
+                                progression_event_id,
+                                format!(
+                                    "3/4: Downloading {} {} {}",
+                                    flavour_name,
+                                    jar_name,
+                                    format_byte(dl.downloaded),
+                                ),
+                                0.0,
+                            ));
+                        }
+                    }
+                },
+                true,
+            )
+            .await?;
+        }
         let jre = path_to_runtimes
             .join("java")
             .join(format!("jre{}", jre_major_version))
