@@ -24,6 +24,8 @@ pub enum HandlerGameType {
     MinecraftFabric,
     MinecraftForge,
     MinecraftPaper,
+    MinecraftPurpur,
+    MinecraftSpigot,
     MinecraftBedrock,
 }
 
@@ -41,18 +43,19 @@ impl From<HandlerGameType> for GameType {
 
 impl TryFrom<HandlerGameType> for FlavourKind {
     type Error = Error;
-
-    fn try_from(value: HandlerGameType) -> Result<Self, Error> {
-        Ok(match value {
-            HandlerGameType::MinecraftJavaVanilla => Self::Vanilla,
-            HandlerGameType::MinecraftFabric => Self::Fabric,
-            HandlerGameType::MinecraftForge => Self::Forge,
-            HandlerGameType::MinecraftPaper => Self::Paper,
-            HandlerGameType::MinecraftBedrock => {
-                return Err(Error {
-                    kind: ErrorKind::BadRequest,
-                    source: eyre!("Programmer error: tried to convert HandlerGameType::MinecraftBedrock to FlavourKind"),
-                })
+    fn try_from(value: HandlerGameType) -> Result<Self, Self::Error> {
+        match value {
+            HandlerGameType::MinecraftVanilla => Ok(FlavourKind::Vanilla),
+            HandlerGameType::MinecraftFabric => Ok(FlavourKind::Fabric),
+            HandlerGameType::MinecraftForge => Ok(FlavourKind::Forge),
+            HandlerGameType::MinecraftPaper => Ok(FlavourKind::Paper),
+            HandlerGameType::MinecraftPurpur => Ok(FlavourKind::Purpur),
+            HandlerGameType::MinecraftSpigot => Ok(FlavourKind::Spigot),
+            HandlerGameType::MinecraftQuilt => Ok(FlavourKind::Quilt),
+            HandlerGameType::Generic => Err(Error::msg("No FlavourKind for Generic")),
+        }
+    }
+})
             }
         })
     }
@@ -64,6 +67,8 @@ pub async fn get_available_games() -> Json<Vec<HandlerGameType>> {
         HandlerGameType::MinecraftFabric,
         HandlerGameType::MinecraftForge,
         HandlerGameType::MinecraftPaper,
+        HandlerGameType::MinecraftPurpur,
+        HandlerGameType::MinecraftSpigot,
     ])
 }
 

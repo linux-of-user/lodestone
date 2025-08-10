@@ -71,6 +71,10 @@ pub struct FabricInstallerVersion(String);
 #[derive(Debug, Clone, TS, Serialize, Deserialize, PartialEq)]
 #[ts(export)]
 pub struct PaperBuildVersion(i64);
+
+#[derive(Debug, Clone, TS, Serialize, Deserialize, PartialEq)]
+#[ts(export)]
+pub struct PurpurBuildVersion(i64);
 #[derive(Debug, Clone, TS, Serialize, Deserialize, PartialEq)]
 #[ts(export)]
 pub struct ForgeBuildVersion(String);
@@ -88,22 +92,27 @@ pub enum Flavour {
     Paper {
         build_version: Option<PaperBuildVersion>,
     },
+    Purpur {
+        build_version: Option<PurpurBuildVersion>,
+    },
+    Quilt {
+        loader_version: Option<FabricLoaderVersion>,
+        installer_version: Option<FabricInstallerVersion>,
+    },
     Spigot,
     Forge {
         build_version: Option<ForgeBuildVersion>,
     },
-}
-
-impl From<FlavourKind> for Flavour {
-    fn from(kind: FlavourKind) -> Self {
-        match kind {
-            FlavourKind::Vanilla => Flavour::Vanilla,
-            FlavourKind::Fabric => Flavour::Fabric {
-                loader_version: None,
-                installer_version: None,
-            },
+},
             FlavourKind::Paper => Flavour::Paper {
                 build_version: None,
+            },
+            FlavourKind::Purpur => Flavour::Purpur {
+                build_version: None,
+            },
+            FlavourKind::Quilt => Flavour::Quilt {
+                loader_version: None,
+                installer_version: None,
             },
             FlavourKind::Spigot => Flavour::Spigot,
             FlavourKind::Forge => Flavour::Forge {
@@ -119,6 +128,8 @@ impl ToString for Flavour {
             Flavour::Vanilla => "vanilla".to_string(),
             Flavour::Fabric { .. } => "fabric".to_string(),
             Flavour::Paper { .. } => "paper".to_string(),
+            Flavour::Purpur { .. } => "purpur".to_string(),
+            Flavour::Quilt { .. } => "quilt".to_string(),
             Flavour::Spigot => "spigot".to_string(),
             Flavour::Forge { .. } => "forge".to_string(),
         }
@@ -131,6 +142,8 @@ impl ToString for FlavourKind {
             FlavourKind::Vanilla => "vanilla".to_string(),
             FlavourKind::Fabric => "fabric".to_string(),
             FlavourKind::Paper => "paper".to_string(),
+            FlavourKind::Purpur => "purpur".to_string(),
+            FlavourKind::Quilt => "quilt".to_string(),
             FlavourKind::Spigot => "spigot".to_string(),
             FlavourKind::Forge => "forge".to_string(),
         }
@@ -215,7 +228,9 @@ impl MinecraftInstance {
             FlavourKind::Vanilla => get_vanilla_minecraft_versions().await,
             FlavourKind::Fabric => get_fabric_minecraft_versions().await,
             FlavourKind::Paper => get_paper_minecraft_versions().await,
-            FlavourKind::Spigot => todo!(),
+            FlavourKind::Purpur => crate::implementations::minecraft::purpur::get_purpur_minecraft_versions().await,
+            FlavourKind::Quilt => crate::implementations::minecraft::quilt::get_quilt_minecraft_versions().await,
+            FlavourKind::Spigot => get_vanilla_minecraft_versions().await, // Use vanilla versions for Spigot
             FlavourKind::Forge => get_forge_minecraft_versions().await,
         }
         .context("Failed to get minecraft versions")?;

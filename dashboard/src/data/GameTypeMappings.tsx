@@ -39,6 +39,9 @@ export const game_to_game_icon = (game: Game) =>
             Fabric: () => '/assets/minecraft-fabric.png',
             Forge: () => '/assets/minecraft-forge.png',
             Paper: () => '/assets/minecraft-paper.png',
+            Purpur: () => '/assets/minecraft-paper.png',
+            Spigot: () => '/assets/minecraft-paper.png',
+            Quilt: () => '/assets/minecraft-fabric.png',
           },
           () => unknown_icon
         )

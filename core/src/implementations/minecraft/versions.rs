@@ -157,6 +157,33 @@ pub async fn get_paper_versions() -> Result<MinecraftVersions, Error> {
     group_minecraft_versions(&versions).await
 }
 
+pub async fn get_purpur_versions() -> Result<MinecraftVersions, Error> {
+    let http = reqwest::Client::new();
+
+    let response: Value = serde_json::from_str(
+        http.get("https://api.purpurmc.org/v2/purpur")
+            .send()
+            .await
+            .context("Failed to get purpur versions")?
+            .text()
+            .await
+            .context("Failed to get purpur versions")?
+            .as_str(),
+    )
+    .context("Failed to get purpur versions")?;
+
+    let mut versions = response["versions"]
+        .as_array()
+        .ok_or_else(|| eyre!("Failed to get purpur versions. Response format changed?"))?
+        .iter()
+        .filter_map(|v| v.as_str().map(|s| s.to_string()))
+        .collect::<Vec<String>>();
+
+    versions.reverse();
+    let versions_ref: Vec<&str> = versions.iter().map(|s| s.as_str()).collect();
+    group_minecraft_versions(&versions_ref).await
+}
+
 pub async fn get_forge_versions() -> Result<MinecraftVersions, Error> {
     let http = reqwest::Client::new();
 
