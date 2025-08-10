@@ -1,9 +1,9 @@
 import React from 'react';
 import ModsSearch from './ModsSearch';
 import ModsInstalled from './ModsInstalled';
-
 import { useContext } from 'react';
 import { InstanceContext } from 'data/InstanceContext';
+
 const ModsTab: React.FC = () => {
   const { selectedInstance } = useContext(InstanceContext);
   const uuid = selectedInstance?.uuid;
