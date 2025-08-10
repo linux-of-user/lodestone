@@ -220,8 +220,8 @@ impl MinecraftInstance {
             FlavourKind::Fabric => get_fabric_minecraft_versions().await,
             FlavourKind::Paper => get_paper_minecraft_versions().await,
             FlavourKind::Purpur => crate::implementations::minecraft::purpur::get_purpur_minecraft_versions().await,
-            FlavourKind::Spigot => todo!(),
-            FlavourKind::Forge => get_forge_minecraft_minecraft_versions().await,
+            FlavourKind::Spigot => get_vanilla_minecraft_versions().await,
+            FlavourKind::Forge => get_forge_minecraft_versions().await,
         }
         .context("Failed to get minecraft versions")?;
 
@@ -552,16 +552,15 @@ impl MinecraftInstance {
             })?;
         let jar_name = match flavour {
             Flavour::Forge { .. } => "forge-installer.jar",
-            Flavour::Spigot => "buildtools://spigot",
+            Flavour::Spigot => "spigot-buildtools.jar",
             _ => "server.jar",
         };
 
         if let Flavour::Spigot = flavour {
-            // Download BuildTools.jar
-            let buildtools_url = "https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar";
+            // Download BuildTools.jar, run it, and move resulting spigot-*.jar to server.jar
             let buildtools_path = path_to_instance.join("BuildTools.jar");
-            let _ = download_file(
-                buildtools_url,
+            download_file(
+                "https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar",
                 &path_to_instance,
                 Some("BuildTools.jar"),
                 {
@@ -572,7 +571,7 @@ impl MinecraftInstance {
                                 progression_event_id,
                                 format!(
                                     "3/4: Downloading BuildTools.jar {}",
-                                    format_byte_download(dl.downloaded, total)
+                                    format_byte_download(dl.downloaded, total),
                                 ),
                                 (dl.step as f64 / total as f64) * 3.0,
                             ));
@@ -580,8 +579,9 @@ impl MinecraftInstance {
                     }
                 },
                 true,
-            ).await;
-            // Run BuildTools
+            )
+            .await?;
+
             let jre = path_to_runtimes
                 .join("java")
                 .join(format!("jre{}", jre_major_version))
@@ -591,40 +591,119 @@ impl MinecraftInstance {
                     "bin"
                 })
                 .join("java");
-            let status = dont_spawn_terminal(
+
+            let mut buildtools_cmd = Command::new(&jre);
+            buildtools_cmd
+                .arg("-jar")
+                .arg(&buildtools_path)
+                .arg("--rev")
+                .arg(&config.version)
+                .current_dir(&path_to_instance);
+
+            dont_spawn_terminal(buildtools_cmd).spawn()
+                .context("Failed to start BuildTools")?
+                .wait()
+                .await
+                .context("BuildTools failed")?;
+
+            // Find the spigot-*.jar using list_dir helper
+            let files = crate::util::list_dir(&path_to_instance, Some(false)).await?;
+            let spigot_jar = files.iter().find(|p| {
+                p.file_name()
+                    .map(|s| s.to_string_lossy().starts_with("spigot-"))
+                    .unwrap_or(false)
+                    && p.extension().map(|e| e == "jar").unwrap_or(false)
+            }).ok_or_else(|| eyre!("Failed to find spigot jar after BuildTools run"))?;
+
+            // Rename to server.jar
+            tokio::fs::rename(spigot_jar, path_to_instance.join("server.jar")).await?;
+
+            // Clean up
+            let _ = tokio::fs::remove_file(&buildtools_path).await;
+
+        } else {
+            download_file(
+                jar_url.as_str(),
+                &path_to_instance,
+                Some(jar_name),
+                {
+                    let event_broadcaster = event_broadcaster.clone();
+                    &move |dl| {
+                        if let Some(total) = dl.total {
+                            event_broadcaster.send(Event::new_progression_event_update(
+                                progression_event_id,
+                                format!(
+                                    "3/4: Downloading {} {} {}",
+                                    flavour_name,
+                                    jar_name,
+                                    format_byte_download(dl.downloaded, total),
+                                ),
+                                (dl.step as f64 / total as f64) * 3.0,
+                            ));
+                        } else {
+                            event_broadcaster.send(Event::new_progression_event_update(
+                                progression_event_id,
+                                format!(
+                                    "3/4: Downloading {} {} {}",
+                                    flavour_name,
+                                    jar_name,
+                                    format_byte(dl.downloaded),
+                                ),
+                                0.0,
+                            ));
+                        }
+                    }
+                },
+                true,
+            )
+            .await?;
+        }
+
+        let jre = path_to_runtimes
+            .join("java")
+            .join(format!("jre{}", jre_major_version))
+            .join(if std::env::consts::OS == "macos" {
+                "Contents/Home/bin"
+            } else {
+                "bin"
+            })
+            .join("java");
+        // Step 3 (part 2): Forge Setup
+        if let Flavour::Forge { .. } = flavour.clone() {
+            event_broadcaster.send(Event::new_progression_event_update(
+                progression_event_id,
+                "3/4: Installing Forge Server",
+                1.0,
+            ));
+
+            if !dont_spawn_terminal(
                 Command::new(&jre)
                     .arg("-jar")
-                    .arg(&buildtools_path)
-                    .arg("--rev")
-                    .arg(&config.version)
+                    .arg(&path_to_instance.join("forge-installer.jar"))
+                    .arg("--installServer")
+                    .arg(&path_to_instance)
                     .current_dir(&path_to_instance),
             )
             .stderr(Stdio::null())
             .stdout(Stdio::null())
             .stdin(Stdio::null())
             .spawn()
-            .context("Failed to start BuildTools.jar")?
+            .context("Failed to start forge-installer.jar")?
             .wait()
             .await
-            .context("BuildTools.jar failed")?
-            .success();
-            if !status {
-                return Err(eyre!("Failed to build Spigot server with BuildTools").into());
+            .context("forge-installer.jar failed")?
+            .success()
+            {
+                return Err(eyre!("Failed to install forge server").into());
             }
-            // Find spigot-*.jar and move to server.jar
-            let files = tokio::fs::read_dir(&path_to_instance).await.context("Failed to read spigot build dir")?;
-            let mut found_spigot = false;
-            let mut dir_entries = files;
-            while let Some(entry) = dir_entries.next_entry().await.transpose()? {
-                let fname = entry.file_name();
-                let fname_str = fname.to_string_lossy();
-                if fname_str.starts_with("spigot-") && fname_str.ends_with(".jar") {
-                    let src = path_to_instance.join(&fname);
-                    let dst = path_to_instance.join("server.jar");
-                    tokio::fs::rename(src, dst).await.context("Failed to move spigot jar")?;
-                    found_spigot = true;
-                    break;
-                }
+
+            tokio::fs::write(
+                &path_to_instance.join("user_jvm_args.txt"),
+                "# Generated by Lodestone\n# This file is ignored by Lodestone\n# Please set arguments using Lodestone",
+            )
+            .await
+            .context("Could not create user_jvm_args.txt")?;
+        }
             }
             if !found_spigot {
                 return Err(eyre!("Failed to find built spigot-*.jar after running BuildTools").into());

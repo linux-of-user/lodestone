@@ -54,16 +54,11 @@ pub async fn read_properties_from_path(
 pub async fn get_server_jar_url(version: &str, flavour: &Flavour) -> Option<(String, Flavour)> {
     match flavour {
         Flavour::Vanilla => get_vanilla_jar_url(version).await,
-        Flavour::Fabric {
-            loader_version,
-            installer_version,
-        } => get_fabric_jar_url(version, loader_version, installer_version).await,
+        Flavour::Fabric { loader_version, installer_version } => get_fabric_jar_url(version, loader_version, installer_version).await,
         Flavour::Paper { build_version } => get_paper_jar_url(version, build_version).await,
         Flavour::Purpur { build_version } => get_purpur_jar_url(version, build_version).await,
         Flavour::Spigot => Some(("buildtools://spigot".to_string(), Flavour::Spigot)),
         Flavour::Forge { build_version } => get_forge_jar_url(version, build_version).await.ok(),
-    }
-} => get_forge_jar_url(version, build_version).await.ok(),
     }
 }
 
