@@ -24,6 +24,7 @@ pub struct ModVersion {
     pub dependencies: Vec<ModDependency>,
 }
 
+// Deduped ModUpdateInfo (only one definition)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModUpdateInfo {
     pub project_id: String,

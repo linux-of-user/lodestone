@@ -146,6 +146,11 @@ async fn install_mod(
 
     let mut installed = Vec::new();
     let mut moved_files = Vec::new();
+    let root_id = root_version.id.clone();
+
+    // Dependency project_ids (excluding root)
+    let dep_project_ids: Vec<String> = to_install.iter().skip(1).map(|v| v.project_id.clone()).collect();
+
     for version in &to_install {
         let file = provider.choose_primary_file(version, loader).ok_or(Error { kind: ErrorKind::BadRequest, source: eyre!("No primary file found") })?;
         let tmp_path = provider.download(&file.url, &file.hashes).await.context("download failed")?;
@@ -154,18 +159,24 @@ async fn install_mod(
         if !dest_path.starts_with(&dest_dir) {
             return Err(Error { kind: ErrorKind::BadRequest, source: eyre!("Unsafe mod path for install") });
         }
-        tokio::fs::rename(&tmp_path, &dest_path).await.context("rename mod file failed")?;
+        if let Err(e) = tokio::fs::rename(&tmp_path, &dest_path).await {
+            // Rollback previous moves
+            for p in &moved_files {
+                let _ = tokio::fs::remove_file(p).await;
+            }
+            return Err(Error { kind: ErrorKind::Internal, source: eyre!(e).context("rename mod file failed") });
+        }
         moved_files.push(dest_path.clone());
         installed.push(InstalledMod {
-            project_id: version.id.clone(),
-            version_id: version.version_number.clone(),
+            project_id: version.project_id.clone(),
+            version_id: version.id.clone(),
             filename: filename.clone(),
             path: dest_path.to_string_lossy().to_string(),
             loaders: version.loaders.clone(),
             game_versions: version.game_versions.clone(),
             installed_at: Utc::now().timestamp(),
-            dependencies: if &version.id == &root_version.id {
-                to_install.iter().skip(1).map(|v| v.id.clone()).collect()
+            dependencies: if &version.id == &root_id {
+                dep_project_ids.clone()
             } else {
                 Vec::new()
             },
