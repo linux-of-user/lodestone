@@ -23,6 +23,9 @@ import { InstanceSettingCard } from 'components/Instance';
 import Macros from 'pages/macros';
 import { PlayitggOverview } from 'components/PlayitggOverview';
 
+import ModsTab from 'components/Instance/Mods/ModsTab';
+import { faPuzzlePiece } from '@fortawesome/free-solid-svg-icons';
+
 export const tabs = [
   {
     title: 'Overview',
@@ -67,6 +70,14 @@ export const tabs = [
     width: 'max-w-4xl',
     icon: <FontAwesomeIcon icon={faCodeCompare} />,
     content: <Macros />,
+  },
+  {
+    title: 'Mods',
+    displayTitle: 'Mods',
+    path: 'mods',
+    width: 'max-w-4xl',
+    icon: <FontAwesomeIcon icon={faPuzzlePiece} />,
+    content: <ModsTab />,
   },
   {
     title: 'Event Logs',

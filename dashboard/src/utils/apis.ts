@@ -569,3 +569,46 @@ export const getTunnels = async () => {
   });
   return response;
 };
+
+/***********************
+ * Start Mods API
+ ***********************/
+export async function searchMods(query: string, loader?: string, gameVersion?: string) {
+  const params = { query, loader, game_version: gameVersion };
+  const { data } = await axios.get('/api/v1/mods/search', { params });
+  return data;
+}
+
+export async function getModProject(id: string) {
+  const { data } = await axios.get(`/api/v1/mods/projects/${id}`);
+  return data;
+}
+
+export async function getModVersions(id: string, loader?: string, gameVersion?: string) {
+  const params = { loader, game_version: gameVersion };
+  const { data } = await axios.get(`/api/v1/mods/projects/${id}/versions`, { params });
+  return data;
+}
+
+export async function listInstalledMods(uuid: string) {
+  const { data } = await axios.get(`/api/v1/instances/${uuid}/mods`);
+  return data;
+}
+
+export async function installMod(uuid: string, body: { project_id: string; version_id?: string }) {
+  const { data } = await axios.post(`/api/v1/instances/${uuid}/mods/install`, body);
+  return data;
+}
+
+export async function uninstallMod(uuid: string, fileName: string) {
+  const { data } = await axios.delete(`/api/v1/instances/${uuid}/mods/${encodeURIComponent(fileName)}`);
+  return data;
+}
+
+export async function listModUpdates(uuid: string) {
+  const { data } = await axios.get(`/api/v1/instances/${uuid}/mods/updates`);
+  return data;
+}
+/***********************
+ * End Mods API
+ ***********************/
