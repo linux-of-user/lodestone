@@ -22,4 +22,3 @@ pub mod system;
 pub mod users;
 pub mod util;
 pub mod mods;
-pub mod mods;

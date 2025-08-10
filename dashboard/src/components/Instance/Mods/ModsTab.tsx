@@ -2,9 +2,16 @@ import React from 'react';
 import ModsSearch from './ModsSearch';
 import ModsInstalled from './ModsInstalled';
 
-const ModsTab: React.FC<{ uuid?: string }> = ({ uuid }) => {
-  // uuid prop may be injected by tab system or from URL.
-  // For now, use a static uuid or inject via props/context as you wire up tabs.
+import { useContext } from 'react';
+import { InstanceContext } from 'data/InstanceContext';
+const ModsTab: React.FC = () => {
+  const { selectedInstance } = useContext(InstanceContext);
+  const uuid = selectedInstance?.uuid;
+
+  if (!uuid) {
+    return <div>No instance selected.</div>;
+  }
+
   return (
     <div className="p-4">
       <div className="mb-6">

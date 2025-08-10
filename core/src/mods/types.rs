@@ -15,12 +15,29 @@ pub struct ModProject {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModVersion {
     pub id: String,
+    pub project_id: String,
     pub version_number: String,
     pub loaders: Vec<String>,
     pub game_versions: Vec<String>,
     pub date_published: String,
     pub files: Vec<ModFile>,
     pub dependencies: Vec<ModDependency>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ModUpdateInfo {
+    pub project_id: String,
+    pub current_version_id: String,
+    pub latest_version_id: Option<String>,
+    pub has_update: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ModUpdateInfo {
+    pub project_id: String,
+    pub current_version_id: String,
+    pub latest_version_id: Option<String>,
+    pub has_update: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -48,4 +65,12 @@ pub struct InstalledMod {
     pub game_versions: Vec<String>,
     pub installed_at: i64,
     pub dependencies: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ModUpdateInfo {
+    pub project_id: String,
+    pub current_version_id: String,
+    pub latest_version_id: Option<String>,
+    pub has_update: bool,
 }

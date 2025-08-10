@@ -116,6 +116,7 @@ impl ModProvider for ModrinthProvider {
                 .collect();
             versions.push(ModVersion {
                 id: version.get("id").and_then(|x| x.as_str()).unwrap_or_default().to_string(),
+                project_id: project_id.to_string(),
                 version_number: version.get("version_number").and_then(|x| x.as_str()).unwrap_or_default().to_string(),
                 loaders,
                 game_versions,
@@ -155,6 +156,7 @@ impl ModProvider for ModrinthProvider {
             .collect();
         Ok(ModVersion {
             id: version.get("id").and_then(|x| x.as_str()).unwrap_or_default().to_string(),
+            project_id: version.get("project_id").and_then(|x| x.as_str()).unwrap_or_default().to_string(),
             version_number: version.get("version_number").and_then(|x| x.as_str()).unwrap_or_default().to_string(),
             loaders,
             game_versions,
