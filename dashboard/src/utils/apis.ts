@@ -1,5 +1,30 @@
 import { QueryClient } from '@tanstack/react-query';
 import axios from 'axios';
+
+export async function openTcpPort(port: number) {
+  const { data } = await axios.put(`/api/v1/gateway/open/tcp/${port}`);
+  return data;
+}
+
+export async function openUdpPort(port: number) {
+  const { data } = await axios.put(`/api/v1/gateway/open/udp/${port}`);
+  return data;
+}
+
+export async function closeTcpPort(port: number) {
+  const { data } = await axios.put(`/api/v1/gateway/close/tcp/${port}`);
+  return data;
+}
+
+export async function closeUdpPort(port: number) {
+  const { data } = await axios.put(`/api/v1/gateway/close/udp/${port}`);
+  return data;
+}
+
+export async function getExternalIp() {
+  const { data } = await axios.get(`/api/v1/gateway/external_ip`);
+  return data;
+}
 import { ClientError } from 'bindings/ClientError';
 import { ClientFile } from 'bindings/ClientFile';
 import { MacroEntry } from 'bindings/MacroEntry';
