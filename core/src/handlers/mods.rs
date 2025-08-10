@@ -32,7 +32,6 @@ fn loader_and_dir_from_flavour(flavour: &crate::implementations::minecraft::Flav
     match flavour {
         Fabric { .. } => Ok(("fabric", "mods")),
         Forge { .. } => Ok(("forge", "mods")),
-        Quilt { .. } => Ok(("quilt", "mods")),
         Paper { .. } => Ok(("paper", "plugins")),
         Purpur { .. } => Ok(("purpur", "plugins")),
         Spigot => Ok(("spigot", "plugins")),

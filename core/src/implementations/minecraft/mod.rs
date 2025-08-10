@@ -204,6 +204,18 @@ pub struct MinecraftInstance {
     pid_to_task_entry: Arc<Mutex<IndexMap<MacroPID, TaskEntry>>>,
 }
 
+impl MinecraftInstance {
+    pub async fn flavour(&self) -> Flavour {
+        self.config.lock().await.flavour.clone()
+    }
+    pub async fn game_version(&self) -> String {
+        self.config.lock().await.version.clone()
+    }
+    pub async fn instance_path(&self) -> std::path::PathBuf {
+        self.path_to_instance.clone()
+    }
+}
+
 #[tokio::test]
 async fn test_setup_manifest() {
     let manifest = MinecraftInstance::setup_manifest(&FlavourKind::Fabric)
