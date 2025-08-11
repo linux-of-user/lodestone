@@ -25,6 +25,34 @@ export async function getExternalIp() {
   const { data } = await axios.get(`/api/v1/gateway/external_ip`);
   return data;
 }
+
+/***********************
+ * Docker API
+ ***********************/
+export async function listDockerContainers() {
+  const { data } = await axios.get('/api/v1/docker/containers');
+  return data;
+}
+export async function startDockerContainer(id: string) {
+  const { data } = await axios.put(`/api/v1/docker/containers/${id}/start`);
+  return data;
+}
+export async function stopDockerContainer(id: string) {
+  const { data } = await axios.put(`/api/v1/docker/containers/${id}/stop`);
+  return data;
+}
+export async function restartDockerContainer(id: string) {
+  const { data } = await axios.put(`/api/v1/docker/containers/${id}/restart`);
+  return data;
+}
+export async function killDockerContainer(id: string) {
+  const { data } = await axios.put(`/api/v1/docker/containers/${id}/kill`);
+  return data;
+}
+export async function getDockerContainerLogs(id: string, tail?: number) {
+  const { data } = await axios.get(`/api/v1/docker/containers/${id}/logs`, { params: { tail } });
+  return data;
+}
 import { ClientError } from 'bindings/ClientError';
 import { ClientFile } from 'bindings/ClientFile';
 import { MacroEntry } from 'bindings/MacroEntry';

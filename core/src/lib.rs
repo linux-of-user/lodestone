@@ -691,6 +691,7 @@ pub async fn run(
                     .merge(get_extension_routes(shared_state.clone()))
                     .merge(get_playitgg_routes(shared_state.clone()))
                     .merge(handlers::mods::get_mods_routes(shared_state.clone()))
+                    .merge(handlers::docker::get_docker_routes(shared_state.clone()))
                     .layer(cors)
                     .layer(trace);
                 let app = Router::new().nest("/api/v1", api_routes);
