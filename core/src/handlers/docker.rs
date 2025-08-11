@@ -48,7 +48,25 @@ async fn kill_container(
     }    state.docker_bridge.kill_container(&id.into()).await?;
     Ok(Json(()))}
 #[derive(serde::Deserialize)]
-pub struct LogsQuery {    tail: Option<u64>,
+pub struct LogsQuery {
+    tail: Option<u64>,
+}
+
+async fn get_logs(
+    State(state): State<AppState>,
+    AuthBearer(token): AuthBearer,
+    Path(id): Path<String>,
+    Query(query): Query<LogsQuery>,
+) -> Result<Json<Vec<String>>, Error> {
+    let requester = state.users_manager.read().await.try_auth(&token).ok_or(Error {
+        kind: ErrorKind::Unauthorized,
+        source: eyre!("Unauthorized"),
+    })?;
+    if !requester.is_owner {
+        return Err(Error { kind: ErrorKind::Unauthorized, source: eyre!("Owner only") });
+    }
+    let logs = state.docker_bridge.get_logs(&id, query.tail).await?;
+    Ok(Json(logs))
 }
 async fn get_logs(    State(_state): State<AppState>,
     Path(_id): Path<String>,    Query
