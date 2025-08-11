@@ -21,8 +21,25 @@ A free, open source server hosting tool for Minecraft and other multiplayers gam
 - [x] Priority on safety and security
 - [x] User permission management
 - [x] *(New!)* Extensions via macro (read more [here](https://github.com/Lodestone-Team/lodestone/wiki/Intro-to-Macro-and-Task))
-- [x] *(New!)* Connect without port forward via playit.gg integration (read more [here](https://github.com/Lodestone-Team/lodestone/wiki/Playit.gg-Integration))
-- [ ] *(New!)* **Manage Docker containers** (WIP 🚧, read more [here](https://github.com/Lodestone-Team/lodestone/wiki/Docker-Instance))
+- [x] *(New!)* Connect without port forward via playit.gg integration (see below)
+- [x] *(New!)* **Manage Docker containers**: List, start/stop/restart/kill, and view logs for containers via the Docker page.
+- [x] *(New!)* **Mod management (Modrinth)**: Search, install (with dependency resolution), remove, and update mods natively via the Mods tab (supports Paper, Purpur, Spigot, Fabric, Forge).
+- [x] *(New!)* **Modern Minecraft launcher support**: Purpur (API), Spigot (BuildTools), and the latest Vanilla/Fabric/Paper/Forge versions (including snapshots where available).
+- [x] *(New!)* **UPnP port management**: Open/close TCP and UDP ports and view external IP; controls in the Settings page.
+- [x] *(New!)* **Event Viewer**: Powerful event stream and filter UI for all server and user events.
+
+## What's New (2024)
+- **Purpur and Spigot support:** Easily launch servers with the latest Purpur (via API) and Spigot (auto-BuildTools) releases.
+- **Native Modrinth integration:** Powerful Mods tab lets you search, install (with dependency resolution and hash verification), update, and remove mods (Paper, Purpur, Spigot, Fabric, Forge). New backend manifest tracks all installed mods per instance.
+- **Refreshed playit.gg integration:** Latest official agent crates, single-runner lifecycle, improved status events, and robust reconnects.
+- **UPnP controls:** Open/close TCP/UDP ports and view your external IP directly from the dashboard’s Settings page.
+- **Docker management:** List, start/stop/restart/kill, and view logs for containers via the Docker page. Owner-only for safety.
+- **Event Viewer:** View and filter all server/user/macro/playit events, with initial buffer and live stream.
+- **Usage tips:**
+    - **Mods tab:** Available for all non-Vanilla Minecraft Java instances. Search and install mods, update when new versions are available, and remove unwanted mods. All actions are tracked per-instance.
+    - **UPnP:** Use the Settings page to open/close ports for your Minecraft or game server and get your public IP; ideal for home-hosted servers.
+    - **Docker page:** View and control running containers. Click “Logs” to see recent output for any container.
+    - **Events page:** Use the sidebar or navigation to access the Event Viewer (real-time and filterable).
 
 ## Future Features
 - [ ] Plugin and mod management

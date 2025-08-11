@@ -68,5 +68,3 @@ async fn get_logs(
     let logs = state.docker_bridge.get_logs(&id, query.tail).await?;
     Ok(Json(logs))
 }
-async fn get_logs(    State(_state): State<AppState>,
-    Path(_id): Path<String>,    Query
