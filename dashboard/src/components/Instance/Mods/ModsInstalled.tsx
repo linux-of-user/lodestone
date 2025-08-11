@@ -26,13 +26,26 @@ const ModsInstalled: React.FC<{ uuid?: string }> = ({ uuid }) => {
             <div className="text-xs text-gray-600">{mod.version_id}</div>
             <div className="text-xs">{mod.filename}</div>
           </div>
-          <button className="btn btn-xs btn-error" onClick={() => handleRemove(mod.filename)}>
-            Remove
-          </button>
+          <div className="flex gap-2">
+            <button className="btn btn-xs btn-success" onClick={() => handleUpdate(mod.project_id)}>
+              Update
+            </button>
+            <button className="btn btn-xs btn-error" onClick={() => handleRemove(mod.filename)}>
+              Remove
+            </button>
+          </div>
         </div>
       ))}
     </div>
   );
+
+  function handleUpdate(projectId: string) {
+    if (!uuid) return;
+    installMod(uuid, { project_id: projectId }).then(() => {
+      import('react-toastify').then(({ toast }) => toast.success('Updated!'));
+      listInstalledMods(uuid).then(setInstalled);
+    });
+  }
 };
 
 export default ModsInstalled;
