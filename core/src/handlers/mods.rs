@@ -157,10 +157,13 @@ async fn install_mod(
         let filename = sanitize(&file.filename);
         let dest_path = dest_dir.join(&filename);
         if !dest_path.starts_with(&dest_dir) {
+            // Rollback already moved files
+            for p in &moved_files {
+                let _ = tokio::fs::remove_file(p).await;
+            }
             return Err(Error { kind: ErrorKind::BadRequest, source: eyre!("Unsafe mod path for install") });
         }
         if let Err(e) = tokio::fs::rename(&tmp_path, &dest_path).await {
-            // Rollback previous moves
             for p in &moved_files {
                 let _ = tokio::fs::remove_file(p).await;
             }
@@ -244,13 +247,13 @@ async fn list_updates(
         let versions = provider.get_versions(&entry.project_id, Some(loader), Some(&game_version)).await.unwrap_or_default();
         let newest = versions.iter().max_by_key(|v| v.date_published.clone());
         let has_update = match newest {
-            Some(newest) => newest.version_number != entry.version_id,
+            Some(newest) => newest.id != entry.version_id,
             None => false,
         };
         updates.push(ModUpdateInfo {
             project_id: entry.project_id.clone(),
             current_version_id: entry.version_id.clone(),
-            latest_version_id: newest.map(|v| v.version_number.clone()),
+            latest_version_id: newest.map(|v| v.id.clone()),
             has_update,
         });
     }

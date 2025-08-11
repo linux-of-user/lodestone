@@ -16,7 +16,9 @@ const ModsSearch: React.FC<{ uuid?: string }> = ({ uuid }) => {
   const handleInstall = async (projectId: string) => {
     if (!uuid) return;
     await installMod(uuid, { project_id: projectId });
-    alert('Installed!'); // Replace with toast
+    // Optionally toast, and trigger refresh of installed list via a callback or query invalidation if using react-query.
+    // For now, use toast:
+    import('react-toastify').then(({ toast }) => toast.success('Installed!'));
   };
 
   return (
