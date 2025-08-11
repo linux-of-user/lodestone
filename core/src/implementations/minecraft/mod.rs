@@ -79,6 +79,12 @@ pub struct PurpurBuildVersion(i64);
 #[derive(Debug, Clone, TS, Serialize, Deserialize, PartialEq)]
 #[ts(export)]
 pub struct ForgeBuildVersion(String);
+#[derive(Debug, Clone, TS, Serialize, Deserialize, PartialEq)]
+#[ts(export)]
+pub struct QuiltLoaderVersion(String);
+#[derive(Debug, Clone, TS, Serialize, Deserialize, PartialEq)]
+#[ts(export)]
+pub struct QuiltInstallerVersion(String);
 
 /// A parameter for constructor of `MinecraftInstance`
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, EnumKind)]
@@ -90,8 +96,16 @@ pub enum Flavour {
         loader_version: Option<FabricLoaderVersion>,
         installer_version: Option<FabricInstallerVersion>,
     },
+    Quilt {
+        loader_version: Option<QuiltLoaderVersion>,
+        installer_version: Option<QuiltInstallerVersion>,
+    },
     Paper {
         build_version: Option<PaperBuildVersion>,
+    },
+    Quilt {
+        loader_version: Option<QuiltLoaderVersion>,
+        installer_version: Option<QuiltInstallerVersion>,
     },
     Purpur {
         build_version: Option<PurpurBuildVersion>,
