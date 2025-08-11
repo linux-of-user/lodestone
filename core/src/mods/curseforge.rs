@@ -113,7 +113,6 @@ impl ModProvider for CurseForgeProvider {
         let mut versions = Vec::new();
         if let Some(files) = resp.get("data").and_then(|d| d.as_array()) {
             for f in files {
-                // Filter by modloader if desired (not always present)
                 let files_game_versions: Vec<String> = f.get("gameVersions")
                     .and_then(|v| v.as_array())
                     .map(|arr| arr.iter().filter_map(|x| x.as_str().map(|s| s.to_string())).collect())
@@ -181,7 +180,7 @@ impl ModProvider for CurseForgeProvider {
 
     async fn resolve_required_dependencies(
         &self,
-        version_id: &str,
+        _version_id: &str,
     ) -> Result<Vec<ModVersion>, anyhow::Error> {
         // Not implemented for now; would require recursive lookup by modId and fileId.
         Ok(vec![])
