@@ -12,6 +12,8 @@ export function flavourStringToMinecraftFlavour(
       return { paper: { build_version: null } };
     case 'purpur':
       return { purpur: { build_version: null } };
+    case 'quilt':
+      return { quilt: { loader_version: null, installer_version: null } };
     case 'spigot':
       return 'spigot';
     case 'forge':

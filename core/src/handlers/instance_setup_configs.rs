@@ -26,6 +26,7 @@ pub enum HandlerGameType {
     MinecraftPaper,
     MinecraftPurpur,
     MinecraftSpigot,
+    MinecraftQuilt,
     MinecraftBedrock,
 }
 
@@ -51,13 +52,9 @@ impl TryFrom<HandlerGameType> for FlavourKind {
             HandlerGameType::MinecraftPaper => Ok(FlavourKind::Paper),
             HandlerGameType::MinecraftPurpur => Ok(FlavourKind::Purpur),
             HandlerGameType::MinecraftSpigot => Ok(FlavourKind::Spigot),
-            HandlerGameType::MinecraftBedrock => {
-                Err(Error {
-                    kind: ErrorKind::BadRequest,
-                    source: eyre::eyre!(
-                        "Programmer error: tried to convert HandlerGameType::MinecraftBedrock to FlavourKind"
-                    ),
-                })
+            HandlerGameType::MinecraftQuilt => Ok(FlavourKind::Quilt),
+            HandlerGameType::MinecraftBedrock => Err(Error { kind: ErrorKind::BadRequest, source: eyre!("Programmer error: tried to convert HandlerGameType::MinecraftBedrock to FlavourKind") })
+        })
             }
         }
     }

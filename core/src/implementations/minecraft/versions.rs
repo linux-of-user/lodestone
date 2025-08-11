@@ -13,6 +13,31 @@ pub struct MinecraftVersions {
     pub release: Vec<String>,
 }
 
+pub async fn get_quilt_versions() -> Result<MinecraftVersions, Error> {
+    let http = reqwest::Client::new();
+    let response: Value = serde_json::from_str(
+        http.get("https://meta.quiltmc.org/v3/versions/game")
+            .send()
+            .await
+            .context("Failed to get quilt versions")?
+            .text()
+            .await
+            .context("Failed to get quilt versions")?
+            .as_str(),
+    )
+    .context("Failed to get quilt versions")?;
+
+    let versions = response
+        .as_array()
+        .ok_or_else(|| eyre!("Failed to get quilt versions. Response format changed?"))?
+        .iter()
+        .filter_map(|v| v.get("version").and_then(|id| id.as_str()))
+        .map(|id| id.to_string())
+        .collect::<Vec<String>>();
+    let versions_ref: Vec<&str> = versions.iter().map(|s| s.as_str()).collect();
+    group_minecraft_versions(&versions_ref).await
+}
+
 pub async fn get_vanilla_versions() -> Result<MinecraftVersions, Error> {
     let http = reqwest::Client::new();
     let response: Value = serde_json::from_str(
