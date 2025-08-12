@@ -64,10 +64,8 @@ use tokio::{
     select,
     sync::{broadcast::error::RecvError, Mutex, RwLock},
 };
-use tower_http::{
-    cors::{Any, CorsLayer},
-    trace::TraceLayer,
-};
+use tower_http::cors::{Any, CorsLayer};
+use tower_http::trace::TraceLayer;
 use tracing::{debug, error, info, warn};
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::{prelude::__tracing_subscriber_SubscriberExt, EnvFilter};
@@ -667,7 +665,7 @@ pub async fn run(
                         Method::DELETE,
                         Method::OPTIONS,
                     ])
-                    .allow_headers([header::ORIGIN, header::CONTENT_TYPE, header::AUTHORIZATION]) // Note I can't find X-Auth-Token but it was in the original rocket version, hope it's fine
+                    .allow_headers([header::ORIGIN, header::CONTENT_TYPE, header::AUTHORIZATION])
                     .allow_origin(Any);
 
                 let trace = TraceLayer::new_for_http();
@@ -692,6 +690,8 @@ pub async fn run(
                     .merge(get_gateway_routes(shared_state.clone()))
                     .merge(get_extension_routes(shared_state.clone()))
                     .merge(get_playitgg_routes(shared_state.clone()))
+                    .merge(handlers::mods::get_mods_routes(shared_state.clone()))
+                    .merge(handlers::docker::get_docker_routes(shared_state.clone()))
                     .layer(cors)
                     .layer(trace);
                 let app = Router::new().nest("/api/v1", api_routes);

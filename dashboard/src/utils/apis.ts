@@ -1,5 +1,58 @@
 import { QueryClient } from '@tanstack/react-query';
 import axios from 'axios';
+
+export async function openTcpPort(port: number) {
+  const { data } = await axios.put(`/api/v1/gateway/open/tcp/${port}`);
+  return data;
+}
+
+export async function openUdpPort(port: number) {
+  const { data } = await axios.put(`/api/v1/gateway/open/udp/${port}`);
+  return data;
+}
+
+export async function closeTcpPort(port: number) {
+  const { data } = await axios.put(`/api/v1/gateway/close/tcp/${port}`);
+  return data;
+}
+
+export async function closeUdpPort(port: number) {
+  const { data } = await axios.put(`/api/v1/gateway/close/udp/${port}`);
+  return data;
+}
+
+export async function getExternalIp() {
+  const { data } = await axios.get(`/api/v1/gateway/external_ip`);
+  return data;
+}
+
+/***********************
+ * Docker API
+ ***********************/
+export async function listDockerContainers() {
+  const { data } = await axios.get('/api/v1/docker/containers');
+  return data;
+}
+export async function startDockerContainer(id: string) {
+  const { data } = await axios.put(`/api/v1/docker/containers/${id}/start`);
+  return data;
+}
+export async function stopDockerContainer(id: string) {
+  const { data } = await axios.put(`/api/v1/docker/containers/${id}/stop`);
+  return data;
+}
+export async function restartDockerContainer(id: string) {
+  const { data } = await axios.put(`/api/v1/docker/containers/${id}/restart`);
+  return data;
+}
+export async function killDockerContainer(id: string) {
+  const { data } = await axios.put(`/api/v1/docker/containers/${id}/kill`);
+  return data;
+}
+export async function getDockerContainerLogs(id: string, tail?: number) {
+  const { data } = await axios.get(`/api/v1/docker/containers/${id}/logs`, { params: { tail } });
+  return data;
+}
 import { ClientError } from 'bindings/ClientError';
 import { ClientFile } from 'bindings/ClientFile';
 import { MacroEntry } from 'bindings/MacroEntry';
@@ -569,3 +622,46 @@ export const getTunnels = async () => {
   });
   return response;
 };
+
+/***********************
+ * Start Mods API
+ ***********************/
+export async function searchMods(query: string, loader?: string, gameVersion?: string) {
+  const params = { query, loader, game_version: gameVersion };
+  const { data } = await axios.get('/api/v1/mods/search', { params });
+  return data;
+}
+
+export async function getModProject(id: string) {
+  const { data } = await axios.get(`/api/v1/mods/projects/${id}`);
+  return data;
+}
+
+export async function getModVersions(id: string, loader?: string, gameVersion?: string) {
+  const params = { loader, game_version: gameVersion };
+  const { data } = await axios.get(`/api/v1/mods/projects/${id}/versions`, { params });
+  return data;
+}
+
+export async function listInstalledMods(uuid: string) {
+  const { data } = await axios.get(`/api/v1/instances/${uuid}/mods`);
+  return data;
+}
+
+export async function installMod(uuid: string, body: { project_id: string; version_id?: string }) {
+  const { data } = await axios.post(`/api/v1/instances/${uuid}/mods/install`, body);
+  return data;
+}
+
+export async function uninstallMod(uuid: string, fileName: string) {
+  const { data } = await axios.delete(`/api/v1/instances/${uuid}/mods/${encodeURIComponent(fileName)}`);
+  return data;
+}
+
+export async function listModUpdates(uuid: string) {
+  const { data } = await axios.get(`/api/v1/instances/${uuid}/mods/updates`);
+  return data;
+}
+/***********************
+ * End Mods API
+ ***********************/

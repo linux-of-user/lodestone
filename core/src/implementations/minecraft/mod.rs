@@ -4,6 +4,7 @@ mod forge;
 mod line_parser;
 pub mod r#macro;
 mod paper;
+pub mod purpur;
 pub mod player;
 mod players_manager;
 pub mod server;
@@ -71,9 +72,19 @@ pub struct FabricInstallerVersion(String);
 #[derive(Debug, Clone, TS, Serialize, Deserialize, PartialEq)]
 #[ts(export)]
 pub struct PaperBuildVersion(i64);
+
+#[derive(Debug, Clone, TS, Serialize, Deserialize, PartialEq)]
+#[ts(export)]
+pub struct PurpurBuildVersion(i64);
 #[derive(Debug, Clone, TS, Serialize, Deserialize, PartialEq)]
 #[ts(export)]
 pub struct ForgeBuildVersion(String);
+#[derive(Debug, Clone, TS, Serialize, Deserialize, PartialEq)]
+#[ts(export)]
+pub struct QuiltLoaderVersion(String);
+#[derive(Debug, Clone, TS, Serialize, Deserialize, PartialEq)]
+#[ts(export)]
+pub struct QuiltInstallerVersion(String);
 
 /// A parameter for constructor of `MinecraftInstance`
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, EnumKind)]
@@ -85,24 +96,29 @@ pub enum Flavour {
         loader_version: Option<FabricLoaderVersion>,
         installer_version: Option<FabricInstallerVersion>,
     },
+    Quilt {
+        loader_version: Option<QuiltLoaderVersion>,
+        installer_version: Option<QuiltInstallerVersion>,
+    },
     Paper {
         build_version: Option<PaperBuildVersion>,
+    },
+    Quilt {
+        loader_version: Option<QuiltLoaderVersion>,
+        installer_version: Option<QuiltInstallerVersion>,
+    },
+    Purpur {
+        build_version: Option<PurpurBuildVersion>,
     },
     Spigot,
     Forge {
         build_version: Option<ForgeBuildVersion>,
     },
-}
-
-impl From<FlavourKind> for Flavour {
-    fn from(kind: FlavourKind) -> Self {
-        match kind {
-            FlavourKind::Vanilla => Flavour::Vanilla,
-            FlavourKind::Fabric => Flavour::Fabric {
-                loader_version: None,
-                installer_version: None,
-            },
+},
             FlavourKind::Paper => Flavour::Paper {
+                build_version: None,
+            },
+            FlavourKind::Purpur => Flavour::Purpur {
                 build_version: None,
             },
             FlavourKind::Spigot => Flavour::Spigot,
@@ -119,6 +135,7 @@ impl ToString for Flavour {
             Flavour::Vanilla => "vanilla".to_string(),
             Flavour::Fabric { .. } => "fabric".to_string(),
             Flavour::Paper { .. } => "paper".to_string(),
+            Flavour::Purpur { .. } => "purpur".to_string(),
             Flavour::Spigot => "spigot".to_string(),
             Flavour::Forge { .. } => "forge".to_string(),
         }
@@ -131,6 +148,7 @@ impl ToString for FlavourKind {
             FlavourKind::Vanilla => "vanilla".to_string(),
             FlavourKind::Fabric => "fabric".to_string(),
             FlavourKind::Paper => "paper".to_string(),
+            FlavourKind::Purpur => "purpur".to_string(),
             FlavourKind::Spigot => "spigot".to_string(),
             FlavourKind::Forge => "forge".to_string(),
         }
@@ -200,6 +218,18 @@ pub struct MinecraftInstance {
     pid_to_task_entry: Arc<Mutex<IndexMap<MacroPID, TaskEntry>>>,
 }
 
+impl MinecraftInstance {
+    pub async fn flavour(&self) -> Flavour {
+        self.config.lock().await.flavour.clone()
+    }
+    pub async fn game_version(&self) -> String {
+        self.config.lock().await.version.clone()
+    }
+    pub async fn instance_path(&self) -> std::path::PathBuf {
+        self.path_to_instance.clone()
+    }
+}
+
 #[tokio::test]
 async fn test_setup_manifest() {
     let manifest = MinecraftInstance::setup_manifest(&FlavourKind::Fabric)
@@ -215,7 +245,8 @@ impl MinecraftInstance {
             FlavourKind::Vanilla => get_vanilla_minecraft_versions().await,
             FlavourKind::Fabric => get_fabric_minecraft_versions().await,
             FlavourKind::Paper => get_paper_minecraft_versions().await,
-            FlavourKind::Spigot => todo!(),
+            FlavourKind::Purpur => crate::implementations::minecraft::purpur::get_purpur_minecraft_versions().await,
+            FlavourKind::Spigot => get_vanilla_minecraft_versions().await,
             FlavourKind::Forge => get_forge_minecraft_versions().await,
         }
         .context("Failed to get minecraft versions")?;
@@ -532,21 +563,20 @@ impl MinecraftInstance {
             ));
         }
 
-        // Step 3: Download server.jar
+        // Step 3: Download server.jar or run BuildTools for Spigot
         let flavour_name = config.flavour.to_string();
         let (jar_url, flavour) = get_server_jar_url(config.version.as_str(), &config.flavour)
             .await
-            .ok_or_else({
-                || {
-                    eyre!(
-                        "Could not find a {} server.jar for version {}",
-                        flavour_name,
-                        config.version
-                    )
-                }
+            .ok_or_else(|| {
+                eyre!(
+                    "Could not find a {} server.jar for version {}",
+                    flavour_name,
+                    config.version
+                )
             })?;
         let jar_name = match flavour {
             Flavour::Forge { .. } => "forge-installer.jar",
+            Flavour::Spigot => "BuildTools.jar",
             _ => "server.jar",
         };
 
@@ -585,6 +615,217 @@ impl MinecraftInstance {
             true,
         )
         .await?;
+
+        let jre = path_to_runtimes
+            .join("java")
+            .join(format!("jre{}", jre_major_version))
+            .join(if std::env::consts::OS == "macos" {
+                "Contents/Home/bin"
+            } else {
+                "bin"
+            })
+            .join("java");
+
+        // If Spigot, run BuildTools to produce spigot jar
+        if let Flavour::Spigot = flavour.clone() {
+            // Run BuildTools.jar using Java to produce the spigot jar
+            let buildtools_jar = path_to_instance.join("BuildTools.jar");
+            let buildtools_cmd = Command::new(&jre)
+                .arg("-jar")
+                .arg(&buildtools_jar)
+                .arg("--rev")
+                .arg(&config.version)
+                .current_dir(&path_to_instance);
+
+            let _ = dont_spawn_terminal(buildtools_cmd)
+                .stderr(Stdio::null())
+                .stdout(Stdio::null())
+                .stdin(Stdio::null())
+                .spawn()
+                .context("Failed to start BuildTools.jar")?
+                .wait()
+                .await
+                .context("BuildTools.jar failed")?;
+
+            // Find spigot-*.jar and rename to server.jar
+            let files = crate::util::list_dir(&path_to_instance, Some(false))
+                .await
+                .context("Failed to find spigot jar")?;
+            let spigot_jar = files.iter().find(|p| {
+                p.extension().unwrap_or_default() == "jar"
+                    && p.file_name()
+                        .unwrap_or_default()
+                        .to_str()
+                        .unwrap_or_default()
+                        .starts_with("spigot-")
+            }).ok_or_else(|| eyre!("Failed to find spigot jar"))?;
+            tokio::fs::rename(&path_to_instance.join(spigot_jar), &path_to_instance.join("server.jar"))
+                .await
+                .context("Failed to rename spigot jar")?;
+        }
+
+        // Step 3 (part 2): Forge Setup
+        if let Flavour::Forge { .. } = flavour.clone() {
+            event_broadcaster.send(Event::new_progression_event_update(
+                progression_event_id,
+                "3/4: Installing Forge Server",
+                1.0,
+            ));
+
+            if !dont_spawn_terminal(
+                Command::new(&jre)
+                    .arg("-jar")
+                    .arg(&path_to_instance.join("forge-installer.jar"))
+                    .arg("--installServer")
+                    .arg(&path_to_instance)
+                    .current_dir(&path_to_instance),
+            )
+            .stderr(Stdio::null())
+            .stdout(Stdio::null())
+            .stdin(Stdio::null())
+            .spawn()
+            .context("Failed to start forge-installer.jar")?
+            .wait()
+            .await
+            .context("forge-installer.jar failed")?
+            .success()
+            {
+                return Err(eyre!("Failed to install forge server").into());
+            }
+
+            tokio::fs::write(
+                &path_to_instance.join("user_jvm_args.txt"),
+                "# Generated by Lodestone\n# This file is ignored by Lodestone\n# Please set arguments using Lodestone",
+            )
+            .await
+            .context("Could not create user_jvm_args.txt")?;
+        } else {
+            download_file(
+                jar_url.as_str(),
+                &path_to_instance,
+                Some(jar_name),
+                {
+                    let event_broadcaster = event_broadcaster.clone();
+                    &move |dl| {
+                        if let Some(total) = dl.total {
+                            event_broadcaster.send(Event::new_progression_event_update(
+                                progression_event_id,
+                                format!(
+                                    "3/4: Downloading {} {} {}",
+                                    flavour_name,
+                                    jar_name,
+                                    format_byte_download(dl.downloaded, total),
+                                ),
+                                (dl.step as f64 / total as f64) * 3.0,
+                            ));
+                        } else {
+                            event_broadcaster.send(Event::new_progression_event_update(
+                                progression_event_id,
+                                format!(
+                                    "3/4: Downloading {} {} {}",
+                                    flavour_name,
+                                    jar_name,
+                                    format_byte(dl.downloaded),
+                                ),
+                                0.0,
+                            ));
+                        }
+                    }
+                },
+                true,
+            )
+            .await?;
+        }
+
+        let jre = path_to_runtimes
+            .join("java")
+            .join(format!("jre{}", jre_major_version))
+            .join(if std::env::consts::OS == "macos" {
+                "Contents/Home/bin"
+            } else {
+                "bin"
+            })
+            .join("java");
+        // Step 3 (part 2): Forge Setup
+        if let Flavour::Forge { .. } = flavour.clone() {
+            event_broadcaster.send(Event::new_progression_event_update(
+                progression_event_id,
+                "3/4: Installing Forge Server",
+                1.0,
+            ));
+
+            if !dont_spawn_terminal(
+                Command::new(&jre)
+                    .arg("-jar")
+                    .arg(&path_to_instance.join("forge-installer.jar"))
+                    .arg("--installServer")
+                    .arg(&path_to_instance)
+                    .current_dir(&path_to_instance),
+            )
+            .stderr(Stdio::null())
+            .stdout(Stdio::null())
+            .stdin(Stdio::null())
+            .spawn()
+            .context("Failed to start forge-installer.jar")?
+            .wait()
+            .await
+            .context("forge-installer.jar failed")?
+            .success()
+            {
+                return Err(eyre!("Failed to install forge server").into());
+            }
+
+            tokio::fs::write(
+                &path_to_instance.join("user_jvm_args.txt"),
+                "# Generated by Lodestone\n# This file is ignored by Lodestone\n# Please set arguments using Lodestone",
+            )
+            .await
+            .context("Could not create user_jvm_args.txt")?;
+        }
+            }
+            if !found_spigot {
+                return Err(eyre!("Failed to find built spigot-*.jar after running BuildTools").into());
+            }
+            // Optionally remove BuildTools.jar
+            let _ = tokio::fs::remove_file(&buildtools_path).await;
+        } else {
+            // Download as normal
+            download_file(
+                jar_url.as_str(),
+                &path_to_instance,
+                Some(jar_name),
+                {
+                    let event_broadcaster = event_broadcaster.clone();
+                    &move |dl| {
+                        if let Some(total) = dl.total {
+                            event_broadcaster.send(Event::new_progression_event_update(
+                                progression_event_id,
+                                format!(
+                                    "3/4: Downloading {} {} {}",
+                                    flavour_name,
+                                    jar_name,
+                                    format_byte_download(dl.downloaded, total),
+                                ),
+                                (dl.step as f64 / total as f64) * 3.0,
+                            ));
+                        } else {
+                            event_broadcaster.send(Event::new_progression_event_update(
+                                progression_event_id,
+                                format!(
+                                    "3/4: Downloading {} {} {}",
+                                    flavour_name,
+                                    jar_name,
+                                    format_byte(dl.downloaded),
+                                ),
+                                0.0,
+                            ));
+                        }
+                    }
+                },
+                true,
+            )
+            .await?;
+        }
         let jre = path_to_runtimes
             .join("java")
             .join(format!("jre{}", jre_major_version))

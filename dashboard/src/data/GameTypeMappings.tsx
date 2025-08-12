@@ -39,6 +39,9 @@ export const game_to_game_icon = (game: Game) =>
             Fabric: () => '/assets/minecraft-fabric.png',
             Forge: () => '/assets/minecraft-forge.png',
             Paper: () => '/assets/minecraft-paper.png',
+            Purpur: () => '/assets/minecraft-paper.png',
+            Spigot: () => '/assets/minecraft-paper.png',
+            Quilt: () => '/assets/minecraft-fabric.png',
           },
           () => unknown_icon
         )
@@ -102,4 +105,26 @@ export const HandlerGameType_to_Game: Record<HandlerGameType, Game> = {
       type: 'Paper',
     },
   },
+  MinecraftPurpur: {
+    type: 'MinecraftJava',
+    variant: {
+      type: 'Purpur',
+    },
+  },
+  MinecraftSpigot: {
+    type: 'MinecraftJava',
+    variant: {
+      type: 'Spigot',
+    },
+  },
+};
+
+export const GameTypeIcon: Record<string, string> = {
+  Vanilla: '/assets/minecraft-vanilla.png',
+  Fabric: '/assets/minecraft-fabric.png',
+  Forge: '/assets/minecraft-forge.png',
+  Paper: '/assets/minecraft-paper.png',
+  Purpur: '/assets/minecraft-paper.png', // placeholder
+  Spigot: '/assets/minecraft-paper.png', // placeholder
+  Bedrock: '/assets/minecraft-vanilla.png', // placeholder
 };

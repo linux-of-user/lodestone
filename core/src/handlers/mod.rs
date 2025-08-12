@@ -4,6 +4,7 @@
 pub mod checks;
 pub mod core_info;
 pub mod events;
+pub mod extension;
 pub mod gateway;
 pub mod global_fs;
 pub mod global_settings;
@@ -19,5 +20,6 @@ pub mod playitgg;
 pub mod setup;
 pub mod system;
 pub mod users;
-mod util;
-pub mod extension;
+pub mod util;
+pub mod mods;
+pub mod docker;

@@ -15,91 +15,92 @@ license.workspace = true
 [dependencies]
 ansi_term = "0.12.1"
 argon2 = "0.4.1"
-async-trait = "0.1.56"
-axum = { version = "0.6.1", features = ["headers", "ws", "multipart"] }
-axum-auth = "0.4.0"
-axum-macros = "0.3.0"
-axum-server = { version = "0.4.4", features = ["tls-rustls"] }
-base64 = "0.20.0"
-chrono = "0.4.22"
+async-trait = "0.1.80"
+axum = { version = "0.7.4", features = ["headers", "ws", "multipart"] }
+axum-auth = "0.7.0"
+axum-macros = "0.4.0"
+axum-server = { version = "0.5.1", features = ["tls-rustls"] }
+base64 = "0.21.7"
+chrono = "0.4.31"
 color-eyre = "0.6.2"
-dashmap = "5.4.0"
-deno_ast = { version = "0.27.0", features = ["transpiling"] }
-deno_core = "0.190.0"
-deno_graph = "0.49.0"
-deno_runtime = "0.116.0"
+dashmap = "5.5.3"
+deno_ast = { version = "0.32.0", features = ["transpiling"] }
+deno_core = "0.288.0"
+deno_graph = "0.69.0"
+deno_runtime = "0.164.0"
 dotenvy = { version = "0.15" }
 enum-kinds = "0.5.1"
-enum_dispatch = "0.3.8"
-fancy-regex = "0.10.0"
-fs_extra = "1.2.0"
-futures = "0.3.21"
-futures-util = "0.3.14"
-headers = "0.3"
-home = "0.5.3"
-igd = "0.12.0"
-indexmap = { version = "2.2.2", features = ["serde"] }
-jsonwebtoken = "8.1.1"
+enum_dispatch = "0.3.12"
+fancy-regex = "0.13.0"
+fs_extra = "1.3.0"
+futures = "0.3.29"
+futures-util = "0.3.29"
+headers = "0.4.0"
+home = "0.5.5"
+igd = "0.14.0"
+indexmap = { version = "2.2.6", features = ["serde"] }
+jsonwebtoken = "9.2.0"
 lazy_static = "1.4.0"
-local-ip-address = "0.5.0"
-port_scanner = "0.1.5"
-rand = "0.6.5"
-rand_core = { version = "0.6", features = ["std"] }
-rcon = { version = "0.6.0", features = ["rt-tokio"] }
-reqwest = { version = "0.11.10", features = ["stream", "json"] }
-ringbuffer = "0.8.5"
+local-ip-address = "0.6.1"
+port_scanner = "0.3.0"
+rand = "0.8.5"
+rand_core = { version = "0.6.4", features = ["std"] }
+rcon = { version = "0.8.2", features = ["rt-tokio"] }
+reqwest = { version = "0.12.3", features = ["stream", "json", "gzip", "brotli", "deflate", "rustls-tls"] }
+ringbuffer = "0.10.0"
 rs-snowflake = "0.6.0"
 safe-path = { version = "0.1.0", git = "https://github.com/Lodestone-Team/safe_path_subset" }
-sanitize-filename = "0.4.0"
-semver = { version = "1.0", features = ["serde"] }
-serde = { version = "1.0", features = ["derive"] }
-serde-aux = "4.1.2"
-serde_json = "1.0.82"
-sqlx = { version = "0.6.2", git = "https://github.com/Lodestone-Team/sqlx", features = [
+sanitize-filename = "0.5.0"
+semver = { version = "1.0.22", features = ["serde"] }
+serde = { version = "1.0.197", features = ["derive"] }
+serde-aux = "4.4.0"
+serde_json = "1.0.114"
+sqlx = { version = "0.7.3", features = [
     "runtime-tokio-rustls",
     "sqlite",
     "json",
 ] }
-sysinfo = "0.26.5"
+sysinfo = "0.30.5"
 tempdir = "0.3.7"
-thiserror = "1.0.38"
-time = { version = "0.3.17", features = ["macros"] }
-tokio = { version = "1.21.1", features = ["full"] }
-tokio-stream = "0.1"
-tokio-util = "0.7.4"
-tower-http = { version = "0.3.0", features = ["fs", "trace", "cors"] }
-tracing = "0.1.37"
-tracing-appender = "0.2.2"
-tracing-subscriber = { version = "0.3.16", features = [
+thiserror = "1.0.57"
+time = { version = "0.3.34", features = ["macros"] }
+tokio = { version = "1.36.0", features = ["full"] }
+tokio-stream = "0.1.14"
+tokio-util = "0.7.10"
+tower-http = { version = "0.4.4", features = ["fs", "trace", "cors"] }
+tower = "0.4.13"
+tracing = "0.1.40"
+tracing-appender = "0.2.5"
+tracing-subscriber = { version = "0.3.18", features = [
     "env-filter",
     "fmt",
     "local-time",
     "time",
 ] }
 tracing-error = "0.2.0"
-ts-rs = { version = "7.1.1", features = ["indexmap", "indexmap-impl", "no-serde-warnings"] }
-url = "2.3.1"
-walkdir = "2.3.2"
-whoami = "1.2.3"
-zip = "0.6.2"
-openssl = { version = "0.10.45", features = ["vendored"], optional = true }
-flate2 = "1.0.24"
-tar = "0.4.38"
-tempfile = "3.5.0"
-clap = { version = "4.3.0", features = ["derive"] }
-once_cell = "1.17.1"
-fs3 = "0.5.0"
-import_map = "0.15.0"
-playit-agent-common = {git = "https://github.com/playit-cloud/playit-agent/", branch = "v0.9"}
-playit-agent-core-v09 = {package = "playit-agent-core", git = "https://github.com/playit-cloud/playit-agent/", branch = "v0.9"}
-playit-agent-core = {package = "playit-agent-core", git = "https://github.com/playit-cloud/playit-agent/", branch = "master"}
-playit-agent-proto = {package = "playit-agent-proto", git = "https://github.com/playit-cloud/playit-agent/", branch = "master"}
+ts-rs = { version = "8.1.0", features = ["indexmap", "indexmap-impl", "no-serde-warnings"] }
+url = "2.5.0"
+walkdir = "2.5.0"
+whoami = "1.4.1"
+zip = "0.7.1"
+openssl = { version = "0.10.63", features = ["vendored"], optional = true }
+flate2 = "1.0.28"
+tar = "0.4.40"
+tempfile = "3.10.1"
+clap = { version = "4.4.18", features = ["derive"] }
+once_cell = "1.19.0"
+fs3 = "0.6.0"
+import_map = "0.16.0"
+playit-agent = "1.0.9"
+playit-agent-protocol = "1.0.8"
 hex = "0.4.3"
-toml = "0.7.4"
-which = "5.0.0"
-bollard = "*"
+toml = "0.8.10"
+which = "6.0.1"
+bollard = "0.17.0"
+sha1 = "0.10"
+sha2 = "0.10"
 [dependencies.uuid]
-version = "1.1.2"
+version = "1.7.0"
 features = [
     "serde",
     "v4",                # Lets you generate random UUIDs

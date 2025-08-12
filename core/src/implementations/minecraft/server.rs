@@ -355,23 +355,22 @@ impl TServer for MinecraftInstance {
                                         } {
                                             let max_retry = 3;
                                             for i in 0..max_retry {
-                                                let rcon =
-                                                <rcon::Connection<tokio::net::TcpStream>>::builder(
-                                                )
-                                                .enable_minecraft_quirks(true)
-                                                .connect(
+                                                let rcon_builder = rcon::ConnectionBuilder::new(
                                                     &format!("localhost:{}", rcon_port),
                                                     &rcon_psw,
                                                 )
-                                                .await
-                                                .map_err(|e| {
-                                                    warn!(
-                                                    "[{}] Failed to connect to RCON: {}, retry {}/{}",
-                                                    config.name,
-                                                    e, i, max_retry
-                                                );
-                                                    e
-                                                });
+                                                .enable_minecraft_quirks(true);
+                                                let rcon = rcon_builder
+                                                    .connect()
+                                                    .await
+                                                    .map_err(|e| {
+                                                        warn!(
+                                                            "[{}] Failed to connect to RCON: {}, retry {}/{}",
+                                                            config.name,
+                                                            e, i, max_retry
+                                                        );
+                                                        e
+                                                    });
                                                 if let Ok(rcon) = rcon {
                                                     info!("[{}] Connected to RCON", config.name);
                                                     __self.rcon_conn.lock().await.replace(rcon);

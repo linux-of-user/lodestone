@@ -67,6 +67,26 @@ fn docker_event_to_lodestone_event(event: EventMessage) -> Option<Event> {
 }
 
 impl DockerBridge {
+    pub async fn get_logs(&self, id: &str, tail: Option<u64>) -> Result<Vec<String>, Error> {
+        use bollard::container::{LogsOptions};
+        let name = id.to_string().replace("DOCKER-", "");
+        let mut lines = Vec::new();
+        let mut stream = self.docker.logs(
+            &name,
+            Some(LogsOptions::<String> {
+                stdout: true,
+                stderr: true,
+                follow: false,
+                tail: tail.map(|t| t.to_string()),
+                ..Default::default()
+            }),
+        );
+        use futures_util::StreamExt;
+        while let Some(Ok(log)) = stream.next().await {
+            lines.push(log.to_string());
+        }
+        Ok(lines)
+    }
     pub async fn new(
         event_broadcaster: EventBroadcaster,
         db_file_path: PathBuf,

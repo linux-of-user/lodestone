@@ -23,6 +23,11 @@ import { InstanceSettingCard } from 'components/Instance';
 import Macros from 'pages/macros';
 import { PlayitggOverview } from 'components/PlayitggOverview';
 
+import ModsTab from 'components/Instance/Mods/ModsTab';
+import { faPuzzlePiece } from '@fortawesome/free-solid-svg-icons';
+
+import EventViewer from '../events';
+
 export const tabs = [
   {
     title: 'Overview',
@@ -69,24 +74,20 @@ export const tabs = [
     content: <Macros />,
   },
   {
-    title: 'Event Logs',
-    displayTitle: 'Event Logs',
-    path: 'logs',
+    title: 'Mods',
+    displayTitle: 'Mods',
+    path: 'mods',
     width: 'max-w-4xl',
+    icon: <FontAwesomeIcon icon={faPuzzlePiece} />,
+    content: <ModsTab />,
+  },
+  {
+    title: 'Events',
+    displayTitle: 'Event Viewer',
+    path: 'events',
+    width: 'max-w-6xl',
     icon: <FontAwesomeIcon icon={faInbox} />,
-    content: (
-      <DashboardCard className="grow justify-center gap-4">
-        <img
-          src="/assets/placeholder-cube.png"
-          alt="placeholder"
-          className="mx-auto w-20"
-          style={{ imageRendering: 'pixelated' }}
-        />
-        <p className="text-center font-medium text-white/50">
-          Coming soon to a dashboard near you!
-        </p>
-      </DashboardCard>
-    ),
+    content: <EventViewer />,
   },
   {
     title: 'Playitgg',

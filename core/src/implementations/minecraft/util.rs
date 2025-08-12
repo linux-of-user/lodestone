@@ -54,14 +54,80 @@ pub async fn read_properties_from_path(
 pub async fn get_server_jar_url(version: &str, flavour: &Flavour) -> Option<(String, Flavour)> {
     match flavour {
         Flavour::Vanilla => get_vanilla_jar_url(version).await,
-        Flavour::Fabric {
-            loader_version,
-            installer_version,
-        } => get_fabric_jar_url(version, loader_version, installer_version).await,
+        Flavour::Fabric { loader_version, installer_version } => get_fabric_jar_url(version, loader_version, installer_version).await,
         Flavour::Paper { build_version } => get_paper_jar_url(version, build_version).await,
-        Flavour::Spigot => todo!(),
+        Flavour::Purpur { build_version } => get_purpur_jar_url(version, build_version).await,
+        Flavour::Quilt { loader_version, installer_version } => get_quilt_jar_url(version, loader_version, installer_version).await,
+        Flavour::Spigot => Some(("buildtools://spigot".to_string(), Flavour::Spigot)),
         Flavour::Forge { build_version } => get_forge_jar_url(version, build_version).await.ok(),
     }
+}
+
+// Quilt
+pub async fn get_quilt_jar_url(
+    version: &str,
+    loader_version: &Option<super::QuiltLoaderVersion>,
+    installer_version: &Option<super::QuiltInstallerVersion>,
+) -> Option<(String, Flavour)> {
+    let client = reqwest::Client::new();
+
+    // Find loader_version/installer_version if not provided
+    let loader = if let Some(super::QuiltLoaderVersion(l)) = loader_version {
+        l.clone()
+    } else {
+        let resp = client
+            .get("https://meta.quiltmc.org/v3/versions/loader")
+            .send()
+            .await.ok()?
+            .json::<serde_json::Value>().await.ok()?;
+        resp.as_array()?.iter().find(|v| v.get("stable")?.as_bool()? == true).and_then(|v| v.get("version")?.as_str()).map(|s| s.to_string())?
+    };
+
+    let installer = if let Some(super::QuiltInstallerVersion(i)) = installer_version {
+        i.clone()
+    } else {
+        let resp = client
+            .get("https://meta.quiltmc.org/v3/versions/installer")
+            .send()
+            .await.ok()?
+            .json::<serde_json::Value>().await.ok()?;
+        resp.as_array()?.iter().find(|v| v.get("stable")?.as_bool()? == true).and_then(|v| v.get("version")?.as_str()).map(|s| s.to_string())?
+    };
+
+    Some((
+        format!(
+            "https://meta.quiltmc.org/v3/versions/loader/{}/{}/{}/server/jar",
+            version, loader, installer
+        ),
+        super::Flavour::Quilt {
+            loader_version: Some(super::QuiltLoaderVersion(loader)),
+            installer_version: Some(super::QuiltInstallerVersion(installer)),
+        },
+    ))
+}
+
+// Purpur
+pub async fn get_purpur_jar_url(
+    version: &str,
+    purpur_build_version: &Option<super::PurpurBuildVersion>,
+) -> Option<(String, Flavour)> {
+    let url = if let Some(super::PurpurBuildVersion(build)) = purpur_build_version {
+        format!(
+            "https://api.purpurmc.org/v2/purpur/{}/{}/download",
+            version, build
+        )
+    } else {
+        format!(
+            "https://api.purpurmc.org/v2/purpur/{}/latest/download",
+            version
+        )
+    };
+    Some((
+        url.clone(),
+        super::Flavour::Purpur {
+            build_version: purpur_build_version.clone(),
+        },
+    ))
 }
 
 pub async fn get_vanilla_jar_url(version: &str) -> Option<(String, Flavour)> {
